@@ -17,6 +17,24 @@ const VOID_ELEMENTS = new Set([
 
 const RAW_TEXT_ELEMENTS = new Set(["script", "style"]);
 
+function findRawTextClosingTag(html, tag, start) {
+  const lowerHtml = html.toLowerCase();
+  const closingTag = `</${tag}`;
+  let index = lowerHtml.indexOf(closingTag, start);
+
+  while (index !== -1) {
+    const nextChar = html[index + closingTag.length];
+
+    if (nextChar === ">" || /\s/.test(nextChar || "")) {
+      return index;
+    }
+
+    index = lowerHtml.indexOf(closingTag, index + closingTag.length);
+  }
+
+  return -1;
+}
+
 function html2json(htmlText) {
   if (typeof htmlText !== "string") {
     throw new TypeError("html2json expects a string.");
@@ -33,10 +51,12 @@ function html2json(htmlText) {
   while (position < htmlText.length) {
     const current = stack[stack.length - 1];
 
-    // Handle the raw text inside script and style elements.
     if (current.type === "element" && RAW_TEXT_ELEMENTS.has(current.tag)) {
-      const closingTag = `</${current.tag}`;
-      const closingIndex = htmlText.toLowerCase().indexOf(closingTag, position);
+      const closingIndex = findRawTextClosingTag(
+        htmlText,
+        current.tag,
+        position,
+      );
 
       if (closingIndex === -1) {
         appendText(current, htmlText.slice(position), false);
@@ -46,11 +66,11 @@ function html2json(htmlText) {
 
       appendText(current, htmlText.slice(position, closingIndex), false);
 
+      stack.pop();
       position = closingIndex;
       continue;
     }
 
-    // Handle HTML comments.
     if (htmlText.startsWith("<!--", position)) {
       const commentEnd = htmlText.indexOf("-->", position + 4);
       const contentEnd = commentEnd === -1 ? htmlText.length : commentEnd;
@@ -65,7 +85,6 @@ function html2json(htmlText) {
       continue;
     }
 
-    // Skip doctypes and other declarations.
     if (
       htmlText.startsWith("<!", position) ||
       htmlText.startsWith("<?", position)
@@ -81,7 +100,6 @@ function html2json(htmlText) {
       continue;
     }
 
-    // Handle closing tags.
     if (htmlText.startsWith("</", position)) {
       const end = findTagEnd(htmlText, position);
 
@@ -109,7 +127,6 @@ function html2json(htmlText) {
       continue;
     }
 
-    // Handle opening tags.
     if (htmlText[position] === "<") {
       const end = findTagEnd(htmlText, position);
 
@@ -136,13 +153,11 @@ function html2json(htmlText) {
         }
       }
 
-      // Treat an unrecognized "<" as text.
       appendText(stack[stack.length - 1], "<");
       position += 1;
       continue;
     }
 
-    // Handle text between tags.
     const nextTag = htmlText.indexOf("<", position);
     const end = nextTag === -1 ? htmlText.length : nextTag;
 
@@ -252,7 +267,6 @@ function parseAttributes(source) {
           position++;
         }
 
-        // Keep the original value, including any trailing slash.
         value = source.slice(valueStart, position);
       }
     }
@@ -281,13 +295,37 @@ function appendText(parent, text, decodeEntities = true) {
 function decodeHtmlEntities(text) {
   const namedEntities = {
     amp: "&",
+    AMP: "&",
     lt: "<",
+    LT: "<",
     gt: ">",
+    GT: ">",
     quot: '"',
+    QUOT: '"',
     apos: "'",
     nbsp: "\u00A0",
     copy: "\u00A9",
+    COPY: "\u00A9",
     reg: "\u00AE",
+    REG: "\u00AE",
+    trade: "\u2122",
+    euro: "\u20AC",
+    pound: "\u00A3",
+    yen: "\u00A5",
+    cent: "\u00A2",
+    deg: "\u00B0",
+    plusmn: "\u00B1",
+    times: "\u00D7",
+    divide: "\u00F7",
+    ndash: "\u2013",
+    mdash: "\u2014",
+    hellip: "\u2026",
+    lsquo: "\u2018",
+    rsquo: "\u2019",
+    ldquo: "\u201C",
+    rdquo: "\u201D",
+    bull: "\u2022",
+    middot: "\u00B7",
   };
 
   return text.replace(
@@ -332,69 +370,58 @@ function convertHtml2JsonAndSet() {
   }
 }
 
-// Keep your original showExample1() and showExample2()
-// functions below this line so the example buttons keep working.
+function showExample1() {
+  const htmlExample = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>Sample HTML</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to My Website</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section id="home">
+            <h2>Home Section</h2>
+            <p>This is the home section of the webpage.</p>
+        </section>
+        <section id="about">
+            <h2>About Section</h2>
+            <p>This is the about section of the webpage.</p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 My Website</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
+`;
+  const jsonContent = html2json(htmlExample);
 
-// function showExample1() {
-//   const htmlExample = `<!DOCTYPE html>
-// <html lang="en">
-// <head>
-//     <meta charset="UTF-8">
-//     <meta name="viewport">
-//     <title>Sample HTML</title>
-//     <link rel="stylesheet" href="styles.css">
-// </head>
-// <body>
-//     <header>
-//         <h1>Welcome to My Website</h1>
-//     </header>
-//     <nav>
-//         <ul>
-//             <li><a href="#home">Home</a></li>
-//             <li><a href="#about">About</a></li>
-//             <li><a href="#contact">Contact</a></li>
-//         </ul>
-//     </nav>
-//     <main>
-//         <section id="home">
-//             <h2>Home Section</h2>
-//             <p>This is the home section of the webpage.</p>
-//         </section>
-//         <section id="about">
-//             <h2>About Section</h2>
-//             <p>This is the about section of the webpage.</p>
-//         </section>
-//     </main>
-//     <footer>
-//         <p>&copy; 2024 My Website</p>
-//     </footer>
-//     <script src="script.js"></script>
-// </body>
-// </html>
-// `;
-//   const jsonContent = html2json(htmlExample);
+  document.getElementById("html").value = htmlExample;
+  document.getElementById("json").value = JSON.stringify(jsonContent, null, 2);
+}
 
-//   document.getElementById("html").value = htmlExample;
-//   document.getElementById("json").textContent = JSON.stringify(
-//     jsonContent,
-//     null,
-//     2,
-//   );
-// }
+function showExample2() {
+  const htmlExample = `<div>
+<p>Hello world!</p>
+  <button>Click me!</button>
+  <textarea>Some very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long string.</textarea>
+</div>
+`;
+  const jsonContent = html2json(htmlExample);
 
-// function showExample2() {
-//   const htmlExample = `<div>
-// <p>Hello world!</p>
-//   <button>Click me!</button>
-//   <textarea>Some very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long string.</textarea>
-// </div>
-// `;
-//   const jsonContent = html2json(htmlExample);
-
-//   document.getElementById("html").value = htmlExample;
-//   document.getElementById("json").textContent = JSON.stringify(
-//     jsonContent,
-//     null,
-//     2,
-//   );
-// }
+  document.getElementById("html").value = htmlExample;
+  document.getElementById("json").value = JSON.stringify(jsonContent, null, 2);
+}
