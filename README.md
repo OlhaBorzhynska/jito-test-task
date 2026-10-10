@@ -2,8 +2,6 @@
 
 A lightweight JavaScript utility that converts an HTML string into a structured JSON representation without using the browser DOM parser.
 
----
-
 ## Features
 
 - Parses HTML elements, attributes, text nodes, and comments.
@@ -13,8 +11,6 @@ A lightweight JavaScript utility that converts an HTML string into a structured 
 - Decodes common named HTML entities and numeric character references.
 - Handles malformed or incomplete HTML without crashing in common cases.
 - Provides an interactive interface for entering HTML and viewing the resulting JSON.
-
----
 
 ## JSON Structure
 
@@ -50,8 +46,6 @@ The parser returns a root object containing an array of child nodes.
 
 Other node types include text and comment.
 
----
-
 ## How to Run
 
 1. Clone or download the repository.
@@ -59,8 +53,6 @@ Other node types include text and comment.
 3. Enter an HTML snippet or use one of the built-in examples.
 4. Click the conversion button to view the JSON output.
 5. No build step is required for the current implementation.
-
----
 
 ## Testing
 
